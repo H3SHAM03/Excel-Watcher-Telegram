@@ -7,16 +7,16 @@ import threading
 
 BOT_TOKEN='8155782575:AAFSuF6eZfriFPuh7tFonfpRAI3p8Ks6UHU'
 bot = telebot.TeleBot(BOT_TOKEN)
-excel_links = []
-messageID = []
+user_data = {}
+owner_links = []
 
 def get_args(message):
     return message.split()[1:]
 
 @bot.message_handler(commands=['start', 'hello'])
 def send_welcome(message):
-    bot.reply_to(message, "Howdy, how are you doing?")
-    messageID.append(message.chat.id)
+    user_data[f'{message.from_user.id}'] = []
+    bot.reply_to(message, f"Hi {message.from_user.first_name}, how are you doing?")
 
 @bot.message_handler(commands=['add'])
 def add_excel_link(message):
@@ -34,7 +34,7 @@ def add_excel_link(message):
         else:
             df = pd.read_excel(BytesIO(response.content))
             row_count = len(df.axes[0])
-            excel_links.append({'name': name, 'link': link, 'row_count': row_count})
+            user_data[f'{message.from_user.id}'].append({'name': name, 'link': link, 'row_count': row_count, 'chatID': message.chat.id})
             bot.reply_to(message, f"File {name} added successfully")
     except Exception as e:
         print(e)
@@ -42,34 +42,26 @@ def add_excel_link(message):
 
 def check_list():
     while True:
-        if KeyboardInterrupt:
-            break
-
-        for i in excel_links:
-            response = requests.get(i['link'])
-            df = pd.read_excel(BytesIO(response.content))
-            if len(df.axes[0]) > i['row_count']:
-                bot.send_message(messageID[0],f"Bad News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
-            elif len(df.axes[0]) < i['row_count']:
-                bot.send_message(messageID[0],f"Good News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
-            i['row_count'] = len(df.axes[0])
+        for key in user_data.keys():
+            for i in user_data[key]:
+                response = requests.get(i['link'])
+                df = pd.read_excel(BytesIO(response.content))
+                if len(df.axes[0]) > i['row_count']:
+                    bot.send_message(i['chatID'],f"Bad News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
+                elif len(df.axes[0]) < i['row_count']:
+                    bot.send_message(i['chatID'],f"Good News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
+                i['row_count'] = len(df.axes[0])
                 
 
 @bot.message_handler(commands=['list'])
 def links_list(message):
     text = ''
-    for i,link in enumerate(excel_links):
+    for i,link in enumerate(user_data[f'{message.from_user.id}']):
         text = text + f'{i+1}. ' + f'Name: {link["name"]}\nLink: {link["link"]}\nNumber of rows: {link["row_count"]}\n\n'
     if text != '':
         bot.reply_to(message,text)
     else:
         bot.reply_to(message,'List is empty')
-
-@bot.message_handler(commands=['stop'])
-def stop_bot(message):
-    bot.reply_to(message, "Stopping the bot...")
-    bot.stop_polling()
-    sys.exit()
 
 @bot.message_handler(commands=['remove'])
 def remove_excel_link(message):
@@ -80,9 +72,8 @@ def remove_excel_link(message):
             name += i
             if i != get_args(message.text)[-1]:
                 name += ' '
-        for i in excel_links:
-            if i['name'] == name:
-                excel_links.remove(i)
+        for i in user_data[f'{message.from_user.id}']:
+                user_data[f'{message.from_user.id}'].remove(i)
                 bot.reply_to(message,f"File {name} removed successfully")
                 return
         bot.reply_to(message,f"File {name} not found in list")

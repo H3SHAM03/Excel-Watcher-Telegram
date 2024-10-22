@@ -23,6 +23,11 @@ def add_excel_link(message):
     try:
         link = get_args(message.text)[0]
         name = get_args(message.text)[1]
+        name = ''
+        for i in get_args(message.text)[1:]:
+            name += i
+            if i != get_args(message.text)[-1]:
+                name += ' '
         response = requests.get(link)
         if response.status_code != 200:
             bot.reply_to(message,"Unable to download the file. Please check the link.")
@@ -33,10 +38,13 @@ def add_excel_link(message):
             bot.reply_to(message, f"File {name} added successfully")
     except Exception as e:
         print(e)
-        bot.reply_to(message,"Usage: /add_excel <link> <name>")
+        bot.reply_to(message,"Usage: /add <link> <name>")
 
 def check_list():
     while True:
+        if KeyboardInterrupt:
+            break
+
         for i in excel_links:
             response = requests.get(i['link'])
             df = pd.read_excel(BytesIO(response.content))
@@ -62,6 +70,26 @@ def stop_bot(message):
     bot.reply_to(message, "Stopping the bot...")
     bot.stop_polling()
     sys.exit()
+
+@bot.message_handler(commands=['remove'])
+def remove_excel_link(message):
+    try:
+        name = get_args(message.text)[0]
+        name = ''
+        for i in get_args(message.text)[0:]:
+            name += i
+            if i != get_args(message.text)[-1]:
+                name += ' '
+        for i in excel_links:
+            if i['name'] == name:
+                excel_links.remove(i)
+                bot.reply_to(message,f"File {name} removed successfully")
+                return
+        bot.reply_to(message,f"File {name} not found in list")
+    except Exception as e:
+        print(e)
+        bot.reply_to(message,"Usage: /remove <name>")
+            
 
 t = threading.Thread(target=check_list)
 t.start()

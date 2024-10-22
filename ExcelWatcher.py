@@ -51,7 +51,7 @@ def check_list():
 def links_list(message):
     text = ''
     for i,link in enumerate(excel_links):
-        text = text + f'{i+1}. ' + f'Name: {link['name']}\nLink: {link['link']}\nNumber of rows: {link['row_count']}\n\n'
+        text = text + f'{i+1}. ' + f'Name: {link["name"]}\nLink: {link["link"]}\nNumber of rows: {link["row_count"]}\n\n'
     if text != '':
         bot.reply_to(message,text)
     else:

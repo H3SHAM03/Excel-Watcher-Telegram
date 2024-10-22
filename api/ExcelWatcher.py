@@ -69,8 +69,8 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type','text/plain')
         self.end_headers()
+        self.wfile.write('Working'.encode('utf-8'))
         t = threading.Thread(target=check_list)
         t.start()
 
         bot.infinity_polling()
-        return

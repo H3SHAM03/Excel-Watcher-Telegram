@@ -42,9 +42,6 @@ def add_excel_link(message):
 
 def check_list():
     while True:
-        if KeyboardInterrupt:
-            break
-
         for i in excel_links:
             response = requests.get(i['link'])
             df = pd.read_excel(BytesIO(response.content))

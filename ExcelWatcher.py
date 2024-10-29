@@ -42,7 +42,7 @@ def add_excel_link(message):
 
 def check_list():
     while True:
-        for key in user_data.keys():
+        for key in list(user_data.keys()):
             for i in user_data[key]:
                 response = requests.get(i['link'])
                 df = pd.read_excel(BytesIO(response.content))

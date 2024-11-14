@@ -5,7 +5,7 @@ from io import BytesIO
 import sys
 import threading
 
-BOT_TOKEN='8155782575:AAFSuF6eZfriFPuh7tFonfpRAI3p8Ks6UHU'
+BOT_TOKEN=''
 bot = telebot.TeleBot(BOT_TOKEN)
 user_data = {}
 owner_links = []

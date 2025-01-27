@@ -7,6 +7,7 @@ import threading
 
 BOT_TOKEN='8155782575:AAFSuF6eZfriFPuh7tFonfpRAI3p8Ks6UHU'
 bot = telebot.TeleBot(BOT_TOKEN)
+users = []
 user_data = {}
 owner_links = []
 
@@ -15,8 +16,10 @@ def get_args(message):
 
 @bot.message_handler(commands=['start', 'hello'])
 def send_welcome(message):
-    user_data[f'{message.from_user.id}'] = []
+    user_data[f'{message.chat.id}'] = []
     bot.reply_to(message, f"Hi {message.from_user.first_name}, how are you doing?")
+    if message.from_user.username not in users:
+        users.append(message.from_user.username)
 
 @bot.message_handler(commands=['add'])
 def add_excel_link(message):
@@ -34,7 +37,7 @@ def add_excel_link(message):
         else:
             df = pd.read_excel(BytesIO(response.content))
             row_count = len(df.axes[0])
-            user_data[f'{message.from_user.id}'].append({'name': name, 'link': link, 'row_count': row_count, 'chatID': message.chat.id})
+            user_data[f'{message.from_user.id}'].append({'name': name, 'link': link, 'row_count': row_count, 'username': message.from_user.username})
             bot.reply_to(message, f"File {name} added successfully")
     except Exception as e:
         print(e)
@@ -47,9 +50,9 @@ def check_list():
                 response = requests.get(i['link'])
                 df = pd.read_excel(BytesIO(response.content))
                 if len(df.axes[0]) > i['row_count']:
-                    bot.send_message(i['chatID'],f"Bad News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
+                    bot.send_message(key,f"Bad News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
                 elif len(df.axes[0]) < i['row_count']:
-                    bot.send_message(i['chatID'],f"Good News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
+                    bot.send_message(key,f"Good News!\nFile {i['name']} has been updated from {i['row_count']} to {len(df.axes[0])}")
                 i['row_count'] = len(df.axes[0])
                 
 
@@ -62,6 +65,8 @@ def links_list(message):
         bot.reply_to(message,text)
     else:
         bot.reply_to(message,'List is empty')
+    print(user_data)
+    print(users)
 
 @bot.message_handler(commands=['remove'])
 def remove_excel_link(message):
